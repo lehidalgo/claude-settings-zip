@@ -1,103 +1,109 @@
-# Claude Code Configuration Exporter
+# Claude Code Configuration Manager
 
-**Date**: 2025-12-26
-**Document**: claude_config_exporter.md
+Portable backup and restore scripts for Claude Code configuration files (agents, commands, settings).
 
-## Overview
-
-The `export_claude_config.sh` script creates a portable zip archive containing all global Claude Code configuration files. This enables backup, sharing, and restoration of your Claude Code customizations across machines.
-
-## What Gets Exported
-
-```mermaid
-flowchart TD
-    subgraph Source["Source Locations"]
-        A["~/.claude/CLAUDE.md"]
-        B["~/.claude/agents/*.md"]
-        C["~/.claude/commands/*.md"]
-        D["~/.claude/settings.json"]
-        E["~/.codeium/windsurf/mcp_config.json"]
-        F["~/.mcp.json"]
-        G["./CLAUDE.md"]
-    end
-
-    subgraph Export["Zip Archive"]
-        H["CLAUDE_global.md"]
-        I["agents/"]
-        J["commands/"]
-        K["settings.json"]
-        L["mcp_config_windsurf.json"]
-        M["mcp_config_global.json"]
-        N["CLAUDE_project.md"]
-        O["README.md"]
-    end
-
-    A --> H
-    B --> I
-    C --> J
-    D --> K
-    E --> L
-    F --> M
-    G --> N
-```
-
-## File Categories
-
-| Category | Source | Destination | Description |
-|----------|--------|-------------|-------------|
-| Global Instructions | `~/.claude/CLAUDE.md` | `CLAUDE_global.md` | Global agent behavior rules |
-| Project Instructions | `./CLAUDE.md` | `CLAUDE_project.md` | Current project's instructions |
-| Agents | `~/.claude/agents/*.md` | `agents/` | Custom agent definitions |
-| Commands | `~/.claude/commands/*.md` | `commands/` | Slash commands/skills |
-| Settings | `~/.claude/settings.json` | `settings.json` | Claude Code preferences |
-| MCP (Windsurf) | `~/.codeium/windsurf/mcp_config.json` | `mcp_config_windsurf.json` | Windsurf MCP servers |
-| MCP (Global) | `~/.mcp.json` | `mcp_config_global.json` | Global MCP servers |
-
-> **Note**: Project-specific `.mcp.json` files are intentionally excluded to keep exports portable.
-
-## Usage
-
-### Running the Script
+## Quick Start
 
 ```bash
-# Navigate to the project directory
-cd /Users/laht/projects/AIAgency
+# Export your config
+./export_claude_config.sh
 
-# Execute the script
+# Import on another machine
+./import_claude_config.sh claude_config_*.zip
+```
+
+## What Gets Managed
+
+```mermaid
+flowchart LR
+    subgraph Config["Claude Code Config"]
+        A["CLAUDE.md"]
+        B["agents/*.md"]
+        C["commands/*.md"]
+        D["settings.json"]
+        E["MCP configs"]
+    end
+
+    subgraph Scripts["This Repo"]
+        F["export_claude_config.sh"]
+        G["import_claude_config.sh"]
+    end
+
+    Config -->|export| F
+    F -->|creates| H["claude_config_*.zip"]
+    H -->|restore| G
+    G -->|imports| Config
+```
+
+## File Locations
+
+| Component | Location | Description |
+|-----------|----------|-------------|
+| Global CLAUDE.md | `~/.claude/CLAUDE.md` | Global agent behavior rules |
+| Agents | `~/.claude/agents/*.md` | Custom agent definitions |
+| Commands | `~/.claude/commands/*.md` | Slash commands/skills |
+| Settings | `~/.claude/settings.json` | Claude Code preferences |
+| MCP (Windsurf) | `~/.codeium/windsurf/mcp_config.json` | Windsurf MCP servers |
+| MCP (Global) | `~/.mcp.json` | Global MCP servers |
+
+---
+
+## Export Script
+
+### Usage
+
+```bash
 ./export_claude_config.sh
 ```
 
-### Output
+### What It Does
 
-The script creates a timestamped zip file:
+1. Copies global `CLAUDE.md` from `~/.claude/`
+2. Copies project `CLAUDE.md` from current directory (if exists)
+3. Copies all agents from `~/.claude/agents/`
+4. Copies all commands from `~/.claude/commands/`
+5. Copies `settings.json`
+6. Copies global MCP configurations (not project-specific)
+7. Creates timestamped zip file
+
+### Output
 
 ```
 claude_config_YYYYMMDD_HHMMSS.zip
 ```
 
-## Script Workflow
+---
 
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant S as Script
-    participant FS as File System
-    participant Z as Zip
+## Import Script
 
-    U->>S: Execute script
-    S->>FS: Create temp directory
-    S->>FS: Copy CLAUDE.md files
-    S->>FS: Copy agents/*.md
-    S->>FS: Copy commands/*.md
-    S->>FS: Copy settings.json
-    S->>FS: Copy MCP configs
-    S->>FS: Generate README.md
-    S->>Z: Create zip archive
-    S->>FS: Remove temp directory
-    S->>U: Display summary
+### Usage
+
+```bash
+# Auto-detect zip in current directory
+./import_claude_config.sh
+
+# Or specify zip file
+./import_claude_config.sh /path/to/claude_config_*.zip
 ```
 
-## Exported Archive Structure
+### What It Does
+
+1. Extracts the zip archive
+2. Creates `~/.claude/agents/` and `~/.claude/commands/` if needed
+3. Backs up existing files before overwriting
+4. Imports CLAUDE.md, agents, commands, and settings
+5. Warns about MCP configs (requires manual import due to API keys)
+
+### Features
+
+- **Auto-backup**: Existing files are backed up with `.bak` extension
+- **Safe MCP handling**: MCP configs are NOT auto-imported (contain API keys)
+- **Color output**: Clear status indicators
+- **Temp directory cleanup**: Automatic cleanup on exit
+
+---
+
+## Archive Structure
 
 ```
 claude_config_YYYYMMDD_HHMMSS/
@@ -106,85 +112,76 @@ claude_config_YYYYMMDD_HHMMSS/
 ├── agents/
 │   ├── Explorer.md
 │   ├── ai-engineering-expert.md
-│   ├── data-engineering-expert.md
-│   ├── data-intensive-architect.md
-│   ├── data-science-specialist.md
-│   ├── legal-compliance-eu.md
-│   ├── marketing-seo-specialist.md
-│   ├── mlops-engineer.md
-│   ├── nextjs-best-practices-researcher.md
-│   ├── openai-agents-sdk-specialist.md
-│   ├── payload-cms-auditor.md
-│   ├── python-senior-dev.md
-│   ├── scalability-expert.md
-│   └── security-expert.md
+│   ├── security-expert.md
+│   └── ... (more agents)
 ├── commands/
-│   ├── check.md
-│   ├── close_day.md
-│   ├── codebase.md
 │   ├── commit.md
-│   ├── index_graph.md
-│   ├── open_day.md
-│   ├── remember.md
-│   ├── roadmap.md
 │   ├── search.md
-│   ├── security_review.md
-│   ├── status.md
-│   └── update_graph.md
+│   └── ... (more commands)
 ├── settings.json
-├── mcp_config_windsurf.json  # If present
-├── mcp_config_global.json    # If present
-└── README.md                 # Auto-generated documentation
+├── mcp_config_windsurf.json  # If present (NOT auto-imported)
+├── mcp_config_global.json    # If present (NOT auto-imported)
+└── README.md
 ```
 
-## Restoring Configuration
+---
 
-To restore the exported configuration on another machine:
+## MCP Configuration
+
+MCP configs contain API keys and are **NOT auto-imported** for security.
+
+### Manual MCP Import
 
 ```bash
-# Extract the archive
-unzip claude_config_YYYYMMDD_HHMMSS.zip
-cd claude_config_export_YYYYMMDD_HHMMSS
+# Extract the zip first
+unzip claude_config_*.zip
+cd claude_config_export_*
 
-# Restore global CLAUDE.md
-cp CLAUDE_global.md ~/.claude/CLAUDE.md
-
-# Restore agents
-mkdir -p ~/.claude/agents
-cp agents/*.md ~/.claude/agents/
-
-# Restore commands
-mkdir -p ~/.claude/commands
-cp commands/*.md ~/.claude/commands/
-
-# Restore settings
-cp settings.json ~/.claude/
-
-# Restore MCP config (choose appropriate one)
+# For Windsurf
+mkdir -p ~/.codeium/windsurf
 cp mcp_config_windsurf.json ~/.codeium/windsurf/mcp_config.json
-# OR
+
+# For global MCP
 cp mcp_config_global.json ~/.mcp.json
+
+# IMPORTANT: Update API keys in the copied files!
 ```
 
-## Error Handling
+---
 
-The script handles missing files gracefully:
+## Cross-Machine Migration
 
-| Condition | Behavior |
-|-----------|----------|
-| Missing `~/.claude/CLAUDE.md` | Warning displayed, continues |
-| Missing `./CLAUDE.md` | Info displayed, continues |
-| Empty agents directory | Info displayed, continues |
-| Empty commands directory | Info displayed, continues |
-| No MCP configs found | Info displayed, continues |
+### On Source Machine
+
+```bash
+git clone https://github.com/lehidalgo/claude-settings-zip.git
+cd claude-settings-zip
+./export_claude_config.sh
+# Transfer the zip file to target machine
+```
+
+### On Target Machine
+
+```bash
+# Install Claude Code first
+git clone https://github.com/lehidalgo/claude-settings-zip.git
+cd claude-settings-zip
+# Copy your zip file here
+./import_claude_config.sh claude_config_*.zip
+# Restart Claude Code
+```
+
+---
 
 ## Requirements
 
 - Bash shell
-- `zip` command available
-- `unzip` command (for displaying contents)
+- `zip` / `unzip` commands
+- Claude Code installed (for import to work)
 
-## Security Considerations
+---
+
+## Security Notes
 
 The exported archive may contain:
 
@@ -194,4 +191,11 @@ The exported archive may contain:
 **Recommendations**:
 - Review MCP configs before sharing
 - Store exports in secure locations
-- Regenerate API keys after sharing if necessary
+- Regenerate API keys after sharing
+- The `.gitignore` prevents accidental zip commits
+
+---
+
+## License
+
+MIT
