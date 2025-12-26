@@ -57,22 +57,29 @@ printf "[2/8] Configuring path translation...\n"
 SOURCE_HOME=""
 if [ -f "$EXPORT_DIR/source_home.txt" ]; then
     SOURCE_HOME=$(cat "$EXPORT_DIR/source_home.txt")
-    printf "      ${YELLOW}Source home path from export: $SOURCE_HOME${NC}\n"
 fi
+
+CURRENT_HOME="$HOME"
 
 # Prompt user for source home path
 printf "\n"
 printf "      ${YELLOW}Path Translation Required${NC}\n"
-printf "      Config files may contain absolute paths that need to be updated.\n"
+printf "      Config files contain absolute paths from the source machine.\n"
+printf "      These will be replaced with your current home directory.\n"
+printf "\n"
+printf "      Your current HOME: ${GREEN}$CURRENT_HOME${NC}\n"
 printf "\n"
 if [ -n "$SOURCE_HOME" ]; then
-    printf "      Enter source home path [$SOURCE_HOME]: "
+    printf "      Source HOME (from export): ${YELLOW}$SOURCE_HOME${NC}\n"
+    printf "      Press Enter to accept, or type a different path.\n"
+    printf "      Source home path [$SOURCE_HOME]: "
     read USER_SOURCE_HOME
     if [ -z "$USER_SOURCE_HOME" ]; then
         USER_SOURCE_HOME="$SOURCE_HOME"
     fi
 else
-    printf "      Enter source home path (e.g., /Users/olduser): "
+    printf "      Enter the HOME path from the source machine\n"
+    printf "      (e.g., /Users/olduser or /home/olduser): "
     read USER_SOURCE_HOME
     if [ -z "$USER_SOURCE_HOME" ]; then
         printf "      ${RED}Error: Source home path is required${NC}\n"
@@ -80,8 +87,12 @@ else
     fi
 fi
 
-CURRENT_HOME="$HOME"
-printf "      ${GREEN}Will replace: $USER_SOURCE_HOME → $CURRENT_HOME${NC}\n"
+printf "\n"
+if [ "$USER_SOURCE_HOME" = "$CURRENT_HOME" ]; then
+    printf "      ${YELLOW}Source and destination are the same - no path translation needed${NC}\n"
+else
+    printf "      ${GREEN}Will replace: $USER_SOURCE_HOME → $CURRENT_HOME${NC}\n"
+fi
 printf "\n"
 
 # Function to replace paths in a file
