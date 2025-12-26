@@ -79,11 +79,15 @@ import json
 with open('$HOME/.claude.json', 'r') as f:
     config = json.load(f)
 
-# Remove only project-specific configurations
-if 'projects' in config:
-    project_count = len(config['projects'])
-    del config['projects']
-    print(f'      - Removed {project_count} project-specific configurations')
+# Remove machine-specific and project-specific configurations
+keys_to_remove = ['projects', 'tipsHistory', 'githubRepoPaths']
+for key in keys_to_remove:
+    if key in config:
+        if key == 'projects':
+            print(f'      - Removed {len(config[key])} project-specific configurations')
+        else:
+            print(f'      - Removed {key}')
+        del config[key]
 
 # Count global MCP servers
 mcp_count = len(config.get('mcpServers', {}))
