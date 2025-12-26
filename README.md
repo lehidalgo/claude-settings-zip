@@ -96,8 +96,8 @@ claude_config_YYYYMMDD_HHMMSS.zip
 ### Features
 
 - **Auto-backup**: Existing files are backed up with `.bak` extension
-- **Full MCP import**: claude.json is auto-imported with backup of existing config
-- **Auto path translation**: Replaces source home directory paths with destination `$HOME`
+- **Full MCP import**: claude.json is merged with backup of existing config
+- **Interactive path translation**: Prompts for source home path, replaces with destination `$HOME`
 - **Color output**: Clear status indicators
 - **Temp directory cleanup**: Automatic cleanup on exit
 
@@ -119,7 +119,8 @@ claude_config_YYYYMMDD_HHMMSS/
 │   ├── search.md
 │   └── ... (more commands)
 ├── settings.json
-├── claude.json               # Global MCP servers only (no project data)
+├── claude.json               # MCP servers only
+├── source_home.txt           # Original home path for import
 └── README.md
 ```
 
@@ -127,15 +128,23 @@ claude_config_YYYYMMDD_HHMMSS/
 
 ## Path Translation
 
-When importing on a different machine, the import script automatically:
+When importing on a different machine, the import script:
 
-1. **Detects** the source home directory from paths (e.g., `/Users/olduser`)
-2. **Replaces** all occurrences with your current `$HOME`
-3. **Reports** how many paths were updated
+1. **Reads** the source home directory from `source_home.txt` (if available)
+2. **Prompts** you to confirm or enter the source home path
+3. **Replaces** all occurrences with your current `$HOME`
+4. **Reports** how many paths were updated
 
-This ensures MCP server configurations work on the new machine without manual editing.
+**Example prompt:**
+```
+Path Translation Required
+The MCP config contains absolute paths that need to be updated.
 
-**Example:**
+Enter source home path [/Users/olduser]:
+Will replace: /Users/olduser → /home/newuser
+```
+
+**Example result:**
 ```
 Source:  /Users/john/projects/my-mcp/server.py
 Target:  /home/jane/projects/my-mcp/server.py

@@ -126,11 +126,42 @@ fi
 
 echo "[7/7] Importing claude.json (global MCP servers config)..."
 if [ -f "$EXPORT_DIR/claude.json" ]; then
-    # Merge global MCP servers into existing config (preserve existing projects)
-    python3 -c "
-import json, re, os
+    # Check if source_home.txt exists for reference
+    SOURCE_HOME=""
+    if [ -f "$EXPORT_DIR/source_home.txt" ]; then
+        SOURCE_HOME=$(cat "$EXPORT_DIR/source_home.txt")
+        echo -e "      ${YELLOW}Source home path from export: $SOURCE_HOME${NC}"
+    fi
 
-# Load exported config (global only, no projects)
+    # Prompt user for source home path
+    echo ""
+    echo -e "      ${YELLOW}Path Translation Required${NC}"
+    echo "      The MCP config contains absolute paths that need to be updated."
+    echo ""
+    if [ -n "$SOURCE_HOME" ]; then
+        echo -n "      Enter source home path [$SOURCE_HOME]: "
+        read USER_SOURCE_HOME
+        if [ -z "$USER_SOURCE_HOME" ]; then
+            USER_SOURCE_HOME="$SOURCE_HOME"
+        fi
+    else
+        echo -n "      Enter source home path (e.g., /Users/olduser): "
+        read USER_SOURCE_HOME
+        if [ -z "$USER_SOURCE_HOME" ]; then
+            echo -e "      ${RED}Error: Source home path is required${NC}"
+            exit 1
+        fi
+    fi
+
+    CURRENT_HOME="$HOME"
+    echo -e "      ${GREEN}Will replace: $USER_SOURCE_HOME → $CURRENT_HOME${NC}"
+    echo ""
+
+    # Merge global MCP servers into existing config
+    python3 -c "
+import json, os
+
+# Load exported config (mcpServers only)
 with open('$EXPORT_DIR/claude.json', 'r') as f:
     exported = json.load(f)
 
@@ -146,18 +177,16 @@ if os.path.exists(existing_path):
 else:
     existing = {}
 
-# Detect source home directory for path translation
-content = json.dumps(exported)
-match = re.search(r'(/(?:Users|home)/[^/\"]+)', content)
-source_home = match.group(1) if match else None
-current_home = os.path.expanduser('~')
+source_home = '$USER_SOURCE_HOME'
+current_home = '$CURRENT_HOME'
 
 # Merge global MCP servers (with path translation)
 if 'mcpServers' in exported:
     mcp_json = json.dumps(exported['mcpServers'])
     if source_home and source_home != current_home:
+        original_count = mcp_json.count(source_home)
         mcp_json = mcp_json.replace(source_home, current_home)
-        print(f'      \033[1;33mTranslating paths: {source_home} → {current_home}\033[0m')
+        print(f'      \033[1;33mReplaced {original_count} path(s): {source_home} → {current_home}\033[0m')
     exported['mcpServers'] = json.loads(mcp_json)
 
     # Merge into existing (exported MCP servers take precedence)
@@ -166,17 +195,11 @@ if 'mcpServers' in exported:
     existing['mcpServers'].update(exported['mcpServers'])
     print(f'      \033[0;32m✓ Imported {len(exported[\"mcpServers\"])} global MCP server(s)\033[0m')
 
-# Preserve existing projects (don't overwrite)
-# Only update global settings from exported config
-for key in ['theme', 'autoUpdates']:
-    if key in exported:
-        existing[key] = exported[key]
-
 # Save merged config
 with open(existing_path, 'w') as f:
     json.dump(existing, f, indent=2)
 
-print('      \033[0;32m✓ claude.json merged (global config imported, projects preserved)\033[0m')
+print('      \033[0;32m✓ claude.json merged (MCP servers imported, existing config preserved)\033[0m')
 "
     ((IMPORTED_COUNT++))
 else

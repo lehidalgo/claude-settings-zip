@@ -70,33 +70,33 @@ if [ -f "$CLAUDE_DIR/settings.json" ]; then
     echo "      - settings.json copied"
 fi
 
-# Copy Claude Code main config (global settings only, no project-specific data)
+# Copy Claude Code main config (MCP servers only)
 if [ -f "$HOME/.claude.json" ]; then
-    # Extract only global config, remove project-specific data
+    # Extract only mcpServers, remove everything else
     python3 -c "
 import json
 
 with open('$HOME/.claude.json', 'r') as f:
     config = json.load(f)
 
-# Remove project-specific configurations (machine-specific paths)
-if 'projects' in config:
-    project_count = len(config['projects'])
-    del config['projects']
-    print(f'      - Removed {project_count} project-specific configurations')
+# Extract only mcpServers
+mcp_servers = config.get('mcpServers', {})
+mcp_count = len(mcp_servers)
 
-# Count global MCP servers
-mcp_count = len(config.get('mcpServers', {}))
 if mcp_count > 0:
-    print(f'      - Keeping {mcp_count} global MCP server(s)')
-
-# Save cleaned config
-with open('$OUTPUT_DIR/claude.json', 'w') as f:
-    json.dump(config, f, indent=2)
-
-print('      - claude.json exported (global config only)')
+    # Save only mcpServers
+    with open('$OUTPUT_DIR/claude.json', 'w') as f:
+        json.dump({'mcpServers': mcp_servers}, f, indent=2)
+    print(f'      - Exported {mcp_count} global MCP server(s)')
+    print('      - claude.json contains mcpServers only')
+else:
+    print('      - No MCP servers found, skipping claude.json')
 "
 fi
+
+# Store source home path for import reference
+echo "$HOME" > "$OUTPUT_DIR/source_home.txt"
+echo "      - Source home path: $HOME"
 
 # Create a README for the export
 cat > "$OUTPUT_DIR/README.md" << 'EOF'
@@ -120,7 +120,8 @@ Place these in `~/.claude/commands/` to use them.
 
 ### Settings
 - `settings.json` - Claude Code settings
-- `claude.json` - Claude Code main config (includes MCP servers, user preferences)
+- `claude.json` - MCP server configurations only
+- `source_home.txt` - Original home path (for path translation during import)
 
 ## Installation
 
