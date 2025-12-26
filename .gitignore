@@ -1,5 +1,6 @@
-# Ignore exported Claude config zip files
+# Ignore exported Claude config files
 *.zip
+claude_config_export_*/
 
 # OS files
 .DS_Store

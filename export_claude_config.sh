@@ -70,24 +70,10 @@ if [ -f "$CLAUDE_DIR/settings.json" ]; then
     echo "      - settings.json copied"
 fi
 
-# Check common MCP config locations
-MCP_FOUND=false
-if [ -f "$HOME/.codeium/windsurf/mcp_config.json" ]; then
-    cp "$HOME/.codeium/windsurf/mcp_config.json" "$OUTPUT_DIR/mcp_config_windsurf.json"
-    echo "      - mcp_config_windsurf.json copied"
-    MCP_FOUND=true
-fi
-
-if [ -f "$HOME/.mcp.json" ]; then
-    cp "$HOME/.mcp.json" "$OUTPUT_DIR/mcp_config_global.json"
-    echo "      - mcp_config_global.json copied"
-    MCP_FOUND=true
-fi
-
-# Note: Project-specific .mcp.json is intentionally NOT exported (global configs only)
-
-if [ "$MCP_FOUND" = false ]; then
-    echo "      - INFO: No MCP config files found"
+# Copy Claude Code main config (contains MCP servers and other settings)
+if [ -f "$HOME/.claude.json" ]; then
+    cp "$HOME/.claude.json" "$OUTPUT_DIR/claude.json"
+    echo "      - claude.json copied (contains MCP servers config)"
 fi
 
 # Create a README for the export
@@ -112,7 +98,7 @@ Place these in `~/.claude/commands/` to use them.
 
 ### Settings
 - `settings.json` - Claude Code settings
-- `mcp_config_*.json` - Global MCP server configurations (project-specific configs excluded)
+- `claude.json` - Claude Code main config (includes MCP servers, user preferences)
 
 ## Installation
 

@@ -124,28 +124,17 @@ else
     echo "      - No settings.json in archive"
 fi
 
-echo "[7/7] Checking MCP configurations..."
-MCP_FILES=$(find "$EXPORT_DIR" -maxdepth 1 -name "mcp_config*.json" 2>/dev/null)
-if [ -n "$MCP_FILES" ]; then
-    echo ""
-    echo -e "      ${YELLOW}⚠ MCP config files found but NOT auto-imported:${NC}"
-    for mcp_file in $MCP_FILES; do
-        echo "         - $(basename "$mcp_file")"
-    done
-    echo ""
-    echo -e "      ${YELLOW}MCP configs contain API keys that are machine-specific.${NC}"
-    echo "      To import manually, extract the zip and copy the MCP config:"
-    echo ""
-    echo "      # For Windsurf:"
-    echo "      mkdir -p ~/.codeium/windsurf"
-    echo "      cp mcp_config_windsurf.json ~/.codeium/windsurf/mcp_config.json"
-    echo ""
-    echo "      # For global MCP:"
-    echo "      cp mcp_config_global.json ~/.mcp.json"
-    echo ""
-    echo -e "      ${RED}Remember to update API keys after copying!${NC}"
+echo "[7/7] Importing claude.json (MCP servers config)..."
+if [ -f "$EXPORT_DIR/claude.json" ]; then
+    if [ -f "$HOME/.claude.json" ]; then
+        echo -e "      ${YELLOW}Backing up existing .claude.json to .claude.json.bak${NC}"
+        cp "$HOME/.claude.json" "$HOME/.claude.json.bak"
+    fi
+    cp "$EXPORT_DIR/claude.json" "$HOME/.claude.json"
+    echo -e "      ${GREEN}✓ claude.json imported (MCP servers config)${NC}"
+    ((IMPORTED_COUNT++))
 else
-    echo "      - No MCP configs in archive"
+    echo "      - No claude.json in archive"
 fi
 
 echo ""

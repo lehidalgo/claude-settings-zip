@@ -43,8 +43,7 @@ flowchart LR
 | Agents | `~/.claude/agents/*.md` | Custom agent definitions |
 | Commands | `~/.claude/commands/*.md` | Slash commands/skills |
 | Settings | `~/.claude/settings.json` | Claude Code preferences |
-| MCP (Windsurf) | `~/.codeium/windsurf/mcp_config.json` | Windsurf MCP servers |
-| MCP (Global) | `~/.mcp.json` | Global MCP servers |
+| Claude Config | `~/.claude.json` | MCP servers, user preferences, project settings |
 
 ---
 
@@ -92,12 +91,12 @@ claude_config_YYYYMMDD_HHMMSS.zip
 2. Creates `~/.claude/agents/` and `~/.claude/commands/` if needed
 3. Backs up existing files before overwriting
 4. Imports CLAUDE.md, agents, commands, and settings
-5. Warns about MCP configs (requires manual import due to API keys)
+5. Imports claude.json (MCP servers config)
 
 ### Features
 
 - **Auto-backup**: Existing files are backed up with `.bak` extension
-- **Safe MCP handling**: MCP configs are NOT auto-imported (contain API keys)
+- **Full MCP import**: claude.json is auto-imported with backup of existing config
 - **Color output**: Clear status indicators
 - **Temp directory cleanup**: Automatic cleanup on exit
 
@@ -119,32 +118,8 @@ claude_config_YYYYMMDD_HHMMSS/
 │   ├── search.md
 │   └── ... (more commands)
 ├── settings.json
-├── mcp_config_windsurf.json  # If present (NOT auto-imported)
-├── mcp_config_global.json    # If present (NOT auto-imported)
+├── claude.json               # MCP servers config
 └── README.md
-```
-
----
-
-## MCP Configuration
-
-MCP configs contain API keys and are **NOT auto-imported** for security.
-
-### Manual MCP Import
-
-```bash
-# Extract the zip first
-unzip claude_config_*.zip
-cd claude_config_export_*
-
-# For Windsurf
-mkdir -p ~/.codeium/windsurf
-cp mcp_config_windsurf.json ~/.codeium/windsurf/mcp_config.json
-
-# For global MCP
-cp mcp_config_global.json ~/.mcp.json
-
-# IMPORTANT: Update API keys in the copied files!
 ```
 
 ---
@@ -185,13 +160,13 @@ cd claude-settings-zip
 
 The exported archive may contain:
 
-- **MCP API keys** in `mcp_config_*.json` files
+- **MCP API keys** in `claude.json`
 - **Custom instructions** that reference internal systems
 
 **Recommendations**:
-- Review MCP configs before sharing
+- Review claude.json before sharing publicly
 - Store exports in secure locations
-- Regenerate API keys after sharing
+- Regenerate API keys if sharing with others
 - The `.gitignore` prevents accidental zip commits
 
 ---
