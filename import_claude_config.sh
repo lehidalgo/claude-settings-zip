@@ -124,14 +124,60 @@ else
     echo "      - No settings.json in archive"
 fi
 
-echo "[7/7] Importing claude.json (MCP servers config)..."
+echo "[7/7] Importing claude.json (global MCP servers config)..."
 if [ -f "$EXPORT_DIR/claude.json" ]; then
-    if [ -f "$HOME/.claude.json" ]; then
-        echo -e "      ${YELLOW}Backing up existing .claude.json to .claude.json.bak${NC}"
-        cp "$HOME/.claude.json" "$HOME/.claude.json.bak"
-    fi
-    cp "$EXPORT_DIR/claude.json" "$HOME/.claude.json"
-    echo -e "      ${GREEN}✓ claude.json imported (MCP servers config)${NC}"
+    # Merge global MCP servers into existing config (preserve existing projects)
+    python3 -c "
+import json, re, os
+
+# Load exported config (global only, no projects)
+with open('$EXPORT_DIR/claude.json', 'r') as f:
+    exported = json.load(f)
+
+# Load existing config if present
+existing_path = os.path.expanduser('~/.claude.json')
+if os.path.exists(existing_path):
+    with open(existing_path, 'r') as f:
+        existing = json.load(f)
+    # Backup
+    with open(existing_path + '.bak', 'w') as f:
+        json.dump(existing, f, indent=2)
+    print('      \033[1;33mBacking up existing .claude.json to .claude.json.bak\033[0m')
+else:
+    existing = {}
+
+# Detect source home directory for path translation
+content = json.dumps(exported)
+match = re.search(r'(/(?:Users|home)/[^/\"]+)', content)
+source_home = match.group(1) if match else None
+current_home = os.path.expanduser('~')
+
+# Merge global MCP servers (with path translation)
+if 'mcpServers' in exported:
+    mcp_json = json.dumps(exported['mcpServers'])
+    if source_home and source_home != current_home:
+        mcp_json = mcp_json.replace(source_home, current_home)
+        print(f'      \033[1;33mTranslating paths: {source_home} → {current_home}\033[0m')
+    exported['mcpServers'] = json.loads(mcp_json)
+
+    # Merge into existing (exported MCP servers take precedence)
+    if 'mcpServers' not in existing:
+        existing['mcpServers'] = {}
+    existing['mcpServers'].update(exported['mcpServers'])
+    print(f'      \033[0;32m✓ Imported {len(exported[\"mcpServers\"])} global MCP server(s)\033[0m')
+
+# Preserve existing projects (don't overwrite)
+# Only update global settings from exported config
+for key in ['theme', 'autoUpdates']:
+    if key in exported:
+        existing[key] = exported[key]
+
+# Save merged config
+with open(existing_path, 'w') as f:
+    json.dump(existing, f, indent=2)
+
+print('      \033[0;32m✓ claude.json merged (global config imported, projects preserved)\033[0m')
+"
     ((IMPORTED_COUNT++))
 else
     echo "      - No claude.json in archive"

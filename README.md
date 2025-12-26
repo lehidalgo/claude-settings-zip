@@ -62,7 +62,7 @@ flowchart LR
 3. Copies all agents from `~/.claude/agents/`
 4. Copies all commands from `~/.claude/commands/`
 5. Copies `settings.json`
-6. Copies global MCP configurations (not project-specific)
+6. Exports `claude.json` with **global config only** (removes project-specific data)
 7. Creates timestamped zip file
 
 ### Output
@@ -91,12 +91,13 @@ claude_config_YYYYMMDD_HHMMSS.zip
 2. Creates `~/.claude/agents/` and `~/.claude/commands/` if needed
 3. Backs up existing files before overwriting
 4. Imports CLAUDE.md, agents, commands, and settings
-5. Imports claude.json (MCP servers config)
+5. Merges global MCP servers (preserves existing project configs)
 
 ### Features
 
 - **Auto-backup**: Existing files are backed up with `.bak` extension
 - **Full MCP import**: claude.json is auto-imported with backup of existing config
+- **Auto path translation**: Replaces source home directory paths with destination `$HOME`
 - **Color output**: Clear status indicators
 - **Temp directory cleanup**: Automatic cleanup on exit
 
@@ -118,9 +119,29 @@ claude_config_YYYYMMDD_HHMMSS/
 │   ├── search.md
 │   └── ... (more commands)
 ├── settings.json
-├── claude.json               # MCP servers config
+├── claude.json               # Global MCP servers only (no project data)
 └── README.md
 ```
+
+---
+
+## Path Translation
+
+When importing on a different machine, the import script automatically:
+
+1. **Detects** the source home directory from paths (e.g., `/Users/olduser`)
+2. **Replaces** all occurrences with your current `$HOME`
+3. **Reports** how many paths were updated
+
+This ensures MCP server configurations work on the new machine without manual editing.
+
+**Example:**
+```
+Source:  /Users/john/projects/my-mcp/server.py
+Target:  /home/jane/projects/my-mcp/server.py
+```
+
+> **Note**: Only the home directory prefix is replaced. Project paths under `$HOME` must exist on the new machine for MCP servers to work.
 
 ---
 

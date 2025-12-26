@@ -70,10 +70,32 @@ if [ -f "$CLAUDE_DIR/settings.json" ]; then
     echo "      - settings.json copied"
 fi
 
-# Copy Claude Code main config (contains MCP servers and other settings)
+# Copy Claude Code main config (global settings only, no project-specific data)
 if [ -f "$HOME/.claude.json" ]; then
-    cp "$HOME/.claude.json" "$OUTPUT_DIR/claude.json"
-    echo "      - claude.json copied (contains MCP servers config)"
+    # Extract only global config, remove project-specific data
+    python3 -c "
+import json
+
+with open('$HOME/.claude.json', 'r') as f:
+    config = json.load(f)
+
+# Remove project-specific configurations (machine-specific paths)
+if 'projects' in config:
+    project_count = len(config['projects'])
+    del config['projects']
+    print(f'      - Removed {project_count} project-specific configurations')
+
+# Count global MCP servers
+mcp_count = len(config.get('mcpServers', {}))
+if mcp_count > 0:
+    print(f'      - Keeping {mcp_count} global MCP server(s)')
+
+# Save cleaned config
+with open('$OUTPUT_DIR/claude.json', 'w') as f:
+    json.dump(config, f, indent=2)
+
+print('      - claude.json exported (global config only)')
+"
 fi
 
 # Create a README for the export
