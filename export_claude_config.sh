@@ -70,27 +70,31 @@ if [ -f "$CLAUDE_DIR/settings.json" ]; then
     echo "      - settings.json copied"
 fi
 
-# Copy Claude Code main config (MCP servers only)
+# Copy Claude Code main config (remove only projects)
 if [ -f "$HOME/.claude.json" ]; then
-    # Extract only mcpServers, remove everything else
+    # Remove only project-specific data, keep everything else
     python3 -c "
 import json
 
 with open('$HOME/.claude.json', 'r') as f:
     config = json.load(f)
 
-# Extract only mcpServers
-mcp_servers = config.get('mcpServers', {})
-mcp_count = len(mcp_servers)
+# Remove only project-specific configurations
+if 'projects' in config:
+    project_count = len(config['projects'])
+    del config['projects']
+    print(f'      - Removed {project_count} project-specific configurations')
 
+# Count global MCP servers
+mcp_count = len(config.get('mcpServers', {}))
 if mcp_count > 0:
-    # Save only mcpServers
-    with open('$OUTPUT_DIR/claude.json', 'w') as f:
-        json.dump({'mcpServers': mcp_servers}, f, indent=2)
-    print(f'      - Exported {mcp_count} global MCP server(s)')
-    print('      - claude.json contains mcpServers only')
-else:
-    print('      - No MCP servers found, skipping claude.json')
+    print(f'      - Keeping {mcp_count} global MCP server(s)')
+
+# Save config (all global settings preserved)
+with open('$OUTPUT_DIR/claude.json', 'w') as f:
+    json.dump(config, f, indent=2)
+
+print('      - claude.json exported (projects removed, all other config preserved)')
 "
 fi
 
